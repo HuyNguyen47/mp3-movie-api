@@ -23,13 +23,3 @@ def save_data(df, filepath):
 
 
 
-
-
-
-    # if isinstance(df, dict):
-    #     if "Data" in df and isinstance(df["Data"], list):
-    #         df_to_save = pd.DataFrame(df["Data"])
-    #     else:
-    #         df_to_save = pd.DataFrame([df])
-    # else:
-    #     df_to_save = df

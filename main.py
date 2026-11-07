@@ -4,7 +4,8 @@ import logging
 from pathlib import Path
 import pandas as pd
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
-from src import log_requests, ProcessingReport, ProcessConfig, DatasetInfo, DatasetStorage, HealthResponse, setup_logging
+from src import MovieStorage, MovieUploadInfo, MovieDataResponse, MovieProcessingReport, log_requests, ProcessingReport, ProcessConfig, DatasetInfo, HealthResponse, setup_logging
+from src.storage import MOVIE_COLUMNS
 from data_pipeline import create_cleaning_report, process_data, validate_dataframe
 
 setup_logging(verbose=True)
@@ -14,15 +15,15 @@ app = FastAPI(title="Data Processing API", version="1.0.0")
 
 app.middleware("http")(log_requests)
 
-storage = DatasetStorage()
+storage = MovieStorage()
 
 @app.get("/health", response_model=HealthResponse)
 def health_check():
     """Return the application status and version."""
     return {"status": "ok", "version": "1.0.0"}
 
-@app.post("/upload", response_model=DatasetInfo)
-async def upload_dataset(file: UploadFile = File(...)):
+@app.post("/upload", response_model=MovieUploadInfo)
+async def upload_movies(file: UploadFile = File(...)):
     """Read and store a CSV upload."""
     if Path(file.filename).suffix.lower() != ".csv":
         logger.warning(f"Unsupported file format: {Path(file.filename).suffix.lower()}")
@@ -36,6 +37,10 @@ async def upload_dataset(file: UploadFile = File(...)):
         logger.warning(f"Cannot read CSV: {error}")
         raise HTTPException(status_code=400, detail="Cannot read the uploaded CSV")
 
+    if df.columns is not MOVIE_COLUMNS and df.empty:
+        raise HTTPException(status_code=400, detail="Columns are not exactly MOVIE_COLUMNS or dataframe is empty")
+    df = df[MOVIE_COLUMNS]
+
     file_id = storage.save(df, file.filename)
     logger.info(f"Filename {file.filename}, (ID {file_id}) saved, {len(df)} rows")
     return DatasetInfo(
@@ -48,20 +53,16 @@ async def upload_dataset(file: UploadFile = File(...)):
 
 
 
-@app.get("/datasets/{dataset_id}")
-def get_dataset(dataset_id: int, limit: int = Query(default=100, ge=1)):
+@app.get("/movies", response_model=MovieDataResponse)
+def get_movies(limit: int = Query(default=100, ge=1)):
     """Return up to limit rows from a stored dataset."""
-    result = storage.get(dataset_id)
-    if result is None:
-        logger.warning(f"Dataset not found: {dataset_id}")
-        raise HTTPException(status_code=404, detail="Not found")
-
-    record = json.loads(result.head(limit).to_json(orient="records"))   
-    logger.info(f"Retrieved dataset: id={dataset_id}, returned rows={len(result)}")
-    return {"id":dataset_id, 
-            "data":record,
-            "rows":len(record)
-            }
+    df = storage.get()
+    result = storage.select_columns(df.columns, limit)
+    rows = storage.count_movies()
+    if df.empty:
+        return {"data": [], "total_rows": 0}
+    logger.info(f"Number of stored movies: {rows}")
+    return {"data": result, "total_rows": rows}
 
 @app.post(
     "/datasets/{dataset_id}/process",

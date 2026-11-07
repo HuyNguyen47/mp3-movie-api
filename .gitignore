@@ -13,3 +13,8 @@ Thumbs.db
 ``
 # Data Files
 output/
+
+data/
+venv/
+__pycache__/
+.pytest_cache/

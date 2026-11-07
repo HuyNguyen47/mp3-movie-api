@@ -23,15 +23,13 @@ def validate_dataframe(df, required_columns, numeric_columns):
                 try:
                     float(value)
                 except ValueError:
-                    # TODO: Log a warning and record this row's index.
                     invalid_rows.append(i)
                     if not logged_warning:
                         logger.warning("Cannot convert some invalid numeric values into number")
                         logged_warning = True
         
-        # TODO: Remove the invalid rows.
         df = df.drop(index=invalid_rows)
-        #convert to a numeric data type
+
         df[col] = pd.to_numeric(df[col])
     logger.debug(f"Number of valid rows: {len(df)}, Number of removed rows: {before - len(df)}")
     return df

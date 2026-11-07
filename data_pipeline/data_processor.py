@@ -57,7 +57,6 @@ def remove_outliers(df, columns, method, threshold):
 
 def process_data(df, config):
     """Apply the processing steps enabled in the configuration."""
-    #check if removing duplic is enabled, if so then we run remov..()
     if config["processing"]["remove_duplicates"]:
         df = remove_duplicates(df)
     if config["processing"]["missing"]["enabled"]:
