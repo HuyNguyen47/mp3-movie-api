@@ -12,7 +12,7 @@ def client():
 
 @pytest.fixture
 def sample_csv_bytes():
-    filepath = Path("fixtures") / "sample_data.csv"
+    filepath = Path("fixtures") / "sample_movies.csv"
     return filepath.read_bytes()
 
 @pytest.fixture
@@ -21,7 +21,7 @@ def uploaded_dataset_id(client, sample_csv_bytes):
         "/upload",
         files={
             "file": (
-                "sample_data.csv",
+                "sample_movies.csv",
                 sample_csv_bytes,
                 "text/csv"
             )
@@ -34,8 +34,8 @@ def uploaded_dataset_id(client, sample_csv_bytes):
 def processing_body():
     return {
         "validation": {
-            "required_columns": ["student_id", "score"],
-            "numeric_columns": ["score"]
+            "required_columns": ["title", "release_year", "rating", "genre"],
+            "numeric_columns": ["release_year", "rating"]
         },
         "processing": {
             "remove_duplicates": True,
