@@ -64,6 +64,7 @@ def get_movies(limit: int = Query(default=100, ge=1)):
         return cached
     df = storage.get()
     if df.empty:
+        logger.info(f"Number of stored movies: {0}")
         returned_df = {"data": [], "total_rows": 0}
         cache.set(limit, returned_df)
         return returned_df
